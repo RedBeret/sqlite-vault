@@ -5,7 +5,25 @@ CREATE TABLE statements. Also provides helpers for identifying which columns
 in a table require encryption/decryption.
 """
 
+import re
+
 from .fields import EncryptedField, PlainField
+
+_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def validate_identifier(name: str) -> str:
+    """Validate a SQL identifier (table or column name).
+
+    Only allows alphanumeric characters and underscores, must start with
+    a letter or underscore. Raises ValueError on invalid input.
+    """
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(
+            f"Invalid SQL identifier: {name!r}. "
+            "Use only letters, digits, and underscores."
+        )
+    return name
 
 
 def create_table_sql(table_name: str, fields: dict) -> str:
@@ -27,11 +45,13 @@ def create_table_sql(table_name: str, fields: dict) -> str:
         })
         # "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, ...)"
     """
+    validate_identifier(table_name)
     if not fields:
         raise ValueError(f"Schema for table '{table_name}' must have at least one field")
 
     columns = ["id INTEGER PRIMARY KEY AUTOINCREMENT"]
     for col_name, field in fields.items():
+        validate_identifier(col_name)
         columns.append(f"{col_name} {field.sql_type}")
 
     column_defs = ",\n    ".join(columns)

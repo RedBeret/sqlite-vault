@@ -12,7 +12,7 @@ from typing import Any
 
 from .crypto import CryptoBackend, KeychainCrypto, PasswordCrypto
 from .fields import EncryptedField, PlainField
-from .schema import create_table_sql, get_encrypted_columns
+from .schema import create_table_sql, get_encrypted_columns, validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +190,9 @@ class VaultDB:
             The rowid (integer primary key) of the new row.
         """
         conn = self._require_conn()
+        validate_identifier(table)
+        for col in kwargs:
+            validate_identifier(col)
         self._register_table(table)
         row = self._encrypt_row(table, kwargs)
 
@@ -222,6 +225,7 @@ class VaultDB:
             List of dicts with decrypted values.
         """
         conn = self._require_conn()
+        validate_identifier(table)
         self._register_table(table)
 
         sql = f"SELECT * FROM {table}"
@@ -230,6 +234,7 @@ class VaultDB:
         if where:
             enc_cols = self._encrypted_cols.get(table, frozenset())
             for col in where:
+                validate_identifier(col)
                 if col in enc_cols:
                     raise ValueError(
                         f"Cannot filter on encrypted column '{col}'. "
@@ -260,6 +265,9 @@ class VaultDB:
             Number of rows updated.
         """
         conn = self._require_conn()
+        validate_identifier(table)
+        for col in list(where) + list(kwargs):
+            validate_identifier(col)
         self._register_table(table)
 
         enc_cols = self._encrypted_cols.get(table, frozenset())
@@ -291,6 +299,9 @@ class VaultDB:
             Number of rows deleted.
         """
         conn = self._require_conn()
+        validate_identifier(table)
+        for col in where:
+            validate_identifier(col)
         self._register_table(table)
 
         enc_cols = self._encrypted_cols.get(table, frozenset())

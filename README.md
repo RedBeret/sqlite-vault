@@ -1,6 +1,6 @@
 # sqlite-vault
 
-![Python](https://img.shields.io/badge/python-3.12%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 Transparent field-level encryption for SQLite with Keychain-backed keys.
 
@@ -10,11 +10,6 @@ SQLCipher encrypts the whole database. Sometimes you only need to encrypt specif
 
 ## Install
 
-```bash
-pip install sqlite-vault
-```
-
-Or from source:
 ```bash
 git clone https://github.com/RedBeret/sqlite-vault.git
 cd sqlite-vault
@@ -100,8 +95,10 @@ macOS Keychain backend. Auto-generates a random Fernet key on first use and stor
 - **Algorithm:** Fernet (AES-128-CBC + HMAC-SHA256)
 - **Key storage:** macOS Keychain (`security` CLI) or PBKDF2-derived from password
 - **PBKDF2 iterations:** 480,000 (OWASP recommended minimum)
+- **Deterministic salt:** `PasswordCrypto` derives its salt from the password itself, so the same password always produces the same key. This is intentional for persistent storage but means identical passwords across different databases share a key. For higher security, pass an explicit random salt and store it separately.
 - **Null handling:** `None` values stored as SQL NULL, not encrypted
 - **WAL mode:** enabled for concurrent-safe reads
+- **SQL identifiers:** table and column names are validated against `[a-zA-Z_][a-zA-Z0-9_]*` to prevent injection
 
 ## Security Considerations
 

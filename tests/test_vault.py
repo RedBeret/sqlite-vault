@@ -11,7 +11,7 @@ import pytest
 
 from sqlite_vault import EncryptedField, PlainField, PasswordCrypto, VaultDB
 from sqlite_vault.fields import EncryptedField as EF, PlainField as PF
-from sqlite_vault.schema import create_table_sql, get_encrypted_columns
+from sqlite_vault.schema import create_table_sql, get_encrypted_columns, validate_identifier
 
 
 # ── PasswordCrypto ─────────────────────────────────────────────────────────
@@ -132,6 +132,18 @@ def test_get_encrypted_columns():
     enc = get_encrypted_columns(fields)
     assert enc == frozenset({"name", "email"})
     assert "role" not in enc
+
+
+def test_validate_identifier_accepts_valid():
+    assert validate_identifier("users") == "users"
+    assert validate_identifier("_private") == "_private"
+    assert validate_identifier("col_2") == "col_2"
+
+
+def test_validate_identifier_rejects_injection():
+    for bad in ["users; DROP TABLE", "col name", "1start", "a-b", "x'OR'1"]:
+        with pytest.raises(ValueError, match="Invalid SQL identifier"):
+            validate_identifier(bad)
 
 
 # ── VaultDB context manager ───────────────────────────────────────────────
